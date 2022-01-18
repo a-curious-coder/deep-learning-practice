@@ -96,6 +96,7 @@ def main():
 
     predictions = model.predict(x_test)
     # print(np.argmax(predictions[0]))
+    
 
 
 if __name__ == "__main__":

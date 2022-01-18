@@ -23,12 +23,14 @@ def vectorize_sequences(sequences, dimension = 10000):
         results[i, sequence] = 1
     return results
 
+
 def decode_review(review):
     word_index = imdb.get_word_index()
     reverse_word_index = dict(
         [(value, key) for (key, value) in word_index.items()])
     decoded_review = ' '.join([reverse_word_index.get(i - 3, '?') for i in review])
     print(decoded_review)
+
 
 def print_dataset_related_info(train_data, train_labels):
     # Prints a review with each common word represented by a number between 1-10000
@@ -37,6 +39,7 @@ def print_dataset_related_info(train_data, train_labels):
     # print(train_labels[0])
     # decode_review(train_data[0])
     pass
+
 
 def plot_accuracy(loss_values, val_loss_values):
     epochs = range(1, 21)
