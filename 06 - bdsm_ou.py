@@ -41,15 +41,16 @@ def print_dataset_related_info(train_data, train_labels):
     pass
 
 
-def plot_loss(loss_values, val_loss_values):
-    epochs = range(1, len(epoch)+1)
-    plt.plot(epochs, loss_values, 'bo', label='Training loss')
-    plt.plot(epochs, val_loss_values, 'b', label='Validation loss')
-    plt.title('Training and validation loss')
+def plot_loss(o_loss, s_loss, title):
+    epochs = range(1, len(o_loss)+1)
+    plt.plot(epochs, o_loss, 'bo', label='Original Network Loss')
+    plt.plot(epochs, s_loss, 'ro', label='Smaller Network Loss')
+    plt.title(title)
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend()
     plt.show()
+
 
 def load_data():
     # Load in training/test datasets
@@ -66,39 +67,7 @@ def load_data():
     return x_train, y_train, x_test, y_test
 
 
-def trial_1():
-    """Breaks training data to train/test datasets
-    Trains a network model on the training dataset and validates using test dataset
-    plot accuracy of network - 
-    """
-    x_train, y_train, x_test, y_test = load_data()
-    # Prepare network
-    network = models.Sequential()
-    network.add(layers.Dense(16, activation='relu', input_shape = (10000,)))
-    network.add(layers.Dense(16, activation='relu'))
-    network.add(layers.Dense(1, activation = 'sigmoid'))
-
-    x_val = x_train[:10000]
-    partial_x_train = x_train[10000:]
-    y_val = y_train[:10000]
-    partial_y_train = y_train[10000:]
-    
-    # Compile the neural network / model
-    network.compile(optimizer='rmsprop',
-                loss='binary_crossentropy',
-                metrics=['acc'])
-
-    history = network.fit(partial_x_train,
-                        partial_y_train,
-                        epochs=20,
-                        batch_size=512,
-                        validation_data=(x_val, y_val))
-    
-    history_dict = history.history
-    print(history_dict.keys())
-    plot_accuracy(history_dict['loss'], history_dict['val_loss'])
-
-def trial_2():
+def original_network():
     """Creates basic neural network model
     Trains model over less epochs (iterations) with a larger batch size
     Evaluates trained model using test set - 88% accuracy
@@ -111,22 +80,48 @@ def trial_2():
     model.add(layers.Dense(16, activation = 'relu'))
     # Output layer
     model.add(layers.Dense(1, activation = 'sigmoid'))
-
     model.compile(optimizer='rmsprop',
-                loss='binary_crossentropy',
-                metrics=['accuracy'])
+                loss='mse',
+                metrics=['acc'])
                 
-    history = model.fit(x_train, y_train, epochs=4, batch_size = 512)
+    history = model.fit(x_train, y_train, epochs=20, batch_size = 512)
+    history_dict = history.history
     results = model.evaluate(x_test, y_test)
-    print(history.history.keys())
-    # loss_values = history.history['loss']
-    # val_loss_values = history.history['loss']
-    # plot_loss(loss_values, val_loss_values)
+    print(history_dict['loss'])
+    return history_dict['loss']
+
+
+def smaller_network():
+    """Creates basic neural network model
+    Trains model over less epochs (iterations) with a larger batch size
+    Evaluates trained model using test set - 88% accuracy
+    """
+    x_train, y_train, x_test, y_test = load_data()
+    model = models.Sequential()
+    # Hidden layer
+    model.add(layers.Dense(4, activation = 'relu', input_shape = (10000,)))
+    # Hidden layer
+    model.add(layers.Dense(4, activation = 'relu'))
+    # Output layer
+    model.add(layers.Dense(1, activation = 'sigmoid'))
+    model.compile(optimizer='rmsprop',
+                loss='categorical_crossentropy',
+                metrics=['acc'])
+                
+    history = model.fit(x_train, y_train, epochs=20, batch_size = 512)
+    history_dict = history.history
+    results = model.evaluate(x_test, y_test)
+    print(history_dict['loss'])
+    return history_dict['loss']
 
 
 def main():
-    # trial_1()
-    trial_2()
+    o_loss = original_network()
+    s_loss = smaller_network()
+    print(o_loss)
+    print(s_loss)
+    plot_loss(o_loss, s_loss, "Original vs. Smaller Network")
+
 
 
 if __name__ == "__main__":

@@ -86,6 +86,7 @@ def k_fold_cross_validation_log(num_epochs, train_data, train_targets):
             print("Building model")
             model = build_model(train_data)
             model.save("boston_model")
+        
         history = model.fit(
             partial_train_data,
             partial_train_targets,
@@ -129,7 +130,7 @@ def plot_k_fold(average_mae_history):
 
 
 def main():
-    num_epochs = 500
+    num_epochs = 80
     # Load boston housing data
     (train_data, train_targets), (test_data, test_targets) = boston_housing.load_data()
 
