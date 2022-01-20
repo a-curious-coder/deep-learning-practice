@@ -10,6 +10,7 @@ from tensorflow.keras import losses
 from tensorflow.keras import metrics
 from tensorflow.keras import models
 from tensorflow.keras import layers
+from tensorflow.keras import regularizers
 
 def vectorize_sequences(sequences, dimension = 10000):
     """Encodes integer representations of reviews into a binary matrix
@@ -29,8 +30,7 @@ def vectorize_sequences(sequences, dimension = 10000):
 
 def decode_review(review):
     word_index = imdb.get_word_index()
-    reverse_word_index = dict(
-        [(value, key) for (key, value) in word_index.items()])
+    reverse_word_index = dict([(value, key) for (key, value) in word_index.items()])
     decoded_review = ' '.join([reverse_word_index.get(i - 3, '?') for i in review])
     print(decoded_review)
 
@@ -44,33 +44,89 @@ def print_dataset_related_info(train_data, train_labels):
     pass
 
 
-def plot_loss(o_loss, s_loss, title):
+def plot_loss(network_type, o_loss, s_loss):
     fig = go.Figure()
     original = go.Scatter(
         x = list(range(1, len(o_loss)+1)),
         y = o_loss,
         name = "Original Network Loss",
-        mode = 'markers'
+        mode = 'markers',
+        marker = dict(size = 16,
+                        symbol = 'x'),
+        hovertemplate = "<br>".join(['Epoch %{x}',
+                                    'Validation Loss: %{y:.3f}',
+                                    '<extra></extra>'])
     )
-
-    smaller = go.Scatter(
-        x = list(range(0, len(s_loss))),
-        y = s_loss,
-        name = "Smaller Network Loss",
-        mode = 'markers'
-    )
-
     fig.add_trace(original)
-    fig.add_trace(smaller)
 
-    fig.update_layout(
-        title = dict(text = "Original vs. Smaller Network Validation Loss",
-                    x = 0.5),
-        xaxis = dict(tickmode = 'linear',
-        tick0 = 0,
-        dtick = 1),
-        grid = False
-    )
+    if network_type == "smaller":
+        smaller = go.Scatter(
+            x = list(range(1, len(s_loss)+1)),
+            y = s_loss,
+            name = "Smaller Network Loss",
+            mode = 'markers',
+            marker = dict(size = 16),
+            hovertemplate = "<br>".join(['Epoch %{x}',
+                                        'Validation Loss: %{y:.3f}',
+                                        '<extra></extra>'])
+        )
+        fig.add_trace(smaller)
+        fig.update_layout(
+            title = dict(text = "Original vs. Smaller Network Validation Loss",
+                            x = 0.5),
+            xaxis = dict(tickmode = 'linear',
+                            tick0 = 0,
+                            dtick = 1,
+                            title = "Epochs"),
+            yaxis = dict(title = "Validation Loss")
+        )
+        fig.write_html('06_os_network.html')
+    elif network_type == "bigger":
+        bigger = go.Scatter(
+            x = list(range(1, len(s_loss)+1)),
+            y = s_loss,
+            name = "Bigger Network Loss",
+            mode = 'markers',
+            marker = dict(size = 16),
+            hovertemplate = "<br>".join(['Epoch %{x}',
+                                        'Validation Loss: %{y:.3f}',
+                                        '<extra></extra>'])
+        )
+        fig.add_trace(bigger)
+        fig.update_layout(
+            title = dict(text = "Original vs. Bigger Network Validation Loss",
+                            x = 0.5),
+            xaxis = dict(tickmode = 'linear',
+                            tick0 = 0,
+                            dtick = 1,
+                            title = "Epochs"),
+            yaxis = dict(title = "Validation Loss")
+        )
+        fig.write_html('06_ob_network.html')
+    elif network_type == "regularization":
+        regularization = go.Scatter(
+            x = list(range(1, len(s_loss)+1)),
+            y = s_loss,
+            name = "Regularization Network Loss",
+            mode = 'markers',
+            marker = dict(size = 16),
+            hovertemplate = "<br>".join(['Epoch %{x}',
+                                        'Validation Loss: %{y:.3f}',
+                                        '<extra></extra>'])
+        )
+        fig.add_trace(regularization)
+        fig.update_layout(
+            title = dict(text = "Original vs. Regularization Network Validation Loss",
+                            x = 0.5),
+            xaxis = dict(tickmode = 'linear',
+                            tick0 = 0,
+                            dtick = 1,
+                            title = "Epochs"),
+            yaxis = dict(title = "Validation Loss")
+        )
+        fig.write_html('06_reg_network.html')
+
+        
     fig.show()
 
 
@@ -111,53 +167,57 @@ def train_network(x_train, y_train, x_test, y_test, settings):
     return history_dict['val_loss']
 
 
-def smaller_network():
+def train_network_regularizer(x_train, y_train, x_test, y_test, settings):
     """Creates basic neural network model
     Trains model over less epochs (iterations) with a larger batch size
     Evaluates trained model using test set - 88% accuracy
     """
-    x_train, y_train, x_test, y_test = load_data()
-    print(len(x_train))
-    print(len(y_train))
-    print(len(x_test))
-    print(len(x_test))
-    smodel = models.Sequential()
+    model = models.Sequential()
+    # Input layer
+    model.add(layers.Dense(settings[0], kernel_regularizer = regularizers.l2(0.001), activation = 'relu', input_shape = (10000,)))
+    model.add(layers.Dense(0.5))
     # Hidden layer
-    smodel.add(layers.Dense(4, activation = 'relu', input_shape = (10000,)))
-    # Hidden layer
-    smodel.add(layers.Dense(4, activation = 'relu'))
+    model.add(layers.Dense(settings[1], kernel_regularizer = regularizers.l2(0.001), activation = 'relu'))
+    model.add(layers.Dense(0.5))
     # Output layer
-    smodel.add(layers.Dense(1, activation = 'sigmoid'))
-    smodel.compile(optimizer='rmsprop',
-                loss='categorical_crossentropy',
+    model.add(layers.Dense(settings[2], activation = 'sigmoid'))
+
+    model.compile(optimizer='rmsprop',
+                loss='binary_crossentropy',
                 metrics=['acc'])
                 
-    history = smodel.fit(x_train, y_train, epochs=20, batch_size = 512,
-                        validation_data=(x_test, y_test))
+    history = model.fit(x_train, y_train, epochs=20, batch_size = 512, validation_data=(x_test, y_test))
     history_dict = history.history
-    results = smodel.evaluate(x_test, y_test)
-    print(history_dict.keys())
+    results = model.evaluate(x_test, y_test)
     return history_dict['val_loss']
 
 
 def main():
-    if not exists("06_val_stats.csv"):
-        x_train, y_train, x_test, y_test = load_data()
+    modes = ["smaller", "bigger", "regularization"]
+    for mode in modes:
         loss_stats = []
-        settings = [[16,16,1], [4,4,1]]
-        for setting in settings:
-            loss_stats.append(train_network(x_train, y_train, x_test, y_test, setting))
+        x_train, y_train, x_test, y_test = load_data()
+        if not exists(f"06v_{mode}.csv") and mode == "regularization":
+            loss_stats.append(train_network(x_train, y_train, x_test, y_test, [16,16,1]))
+            loss_stats.append(train_network_regularizer(x_train, y_train, x_test, y_test, [16,16,1]))
+            df = pd.DataFrame({'original': loss_stats[0], mode : loss_stats[1]})
+            df.to_csv(f"06v_{mode}.csv", index = False)
+        
+        if not exists(f"06v_{mode}.csv") and mode != "regularization":
+            if mode == "bigger":
+                settings = [[16,16,1], [512,512,1]]
+            elif mode == "smaller":
+                settings = [[16,16,1], [4,4,1]]
+            
+            for setting in settings:
+                loss_stats.append(train_network(x_train, y_train, x_test, y_test, setting))
 
-        df = pd.DataFrame({'original': loss_stats[0], 'smaller' : loss_stats[1]})
-        print(df)
-        df.to_csv("06_val_stats.csv", index = False)
-    else:
-        df = pd.read_csv("06_val_stats.csv")
-
-    print(type(df))
-    plot_loss(df['original'].tolist(), df['smaller'].tolist(), "Original vs. Smaller Network")
-
-
+            df = pd.DataFrame({'original': loss_stats[0], mode : loss_stats[1]})
+            df.to_csv(f"06v_{mode}.csv", index = False)
+        else:
+            df = pd.read_csv(f"06v_{mode}.csv")
+        print(df.head())
+        plot_loss(mode, df['original'].tolist(), df[mode].tolist())
 
 if __name__ == "__main__":
     main()
