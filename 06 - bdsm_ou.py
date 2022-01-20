@@ -1,6 +1,9 @@
 import numpy as np
+import pandas as pd
+import plotly.graph_objs as go
 import plotly
 import matplotlib.pyplot as plt
+from os.path import exists
 from tensorflow.keras.datasets import imdb
 from tensorflow.keras import optimizers
 from tensorflow.keras import losses
@@ -42,14 +45,33 @@ def print_dataset_related_info(train_data, train_labels):
 
 
 def plot_loss(o_loss, s_loss, title):
-    epochs = range(1, len(o_loss)+1)
-    plt.plot(epochs, o_loss, 'bo', label='Original Network Loss')
-    plt.plot(epochs, s_loss, 'ro', label='Smaller Network Loss')
-    plt.title(title)
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.show()
+    fig = go.Figure()
+    original = go.Scatter(
+        x = list(range(1, len(o_loss)+1)),
+        y = o_loss,
+        name = "Original Network Loss",
+        mode = 'markers'
+    )
+
+    smaller = go.Scatter(
+        x = list(range(0, len(s_loss))),
+        y = s_loss,
+        name = "Smaller Network Loss",
+        mode = 'markers'
+    )
+
+    fig.add_trace(original)
+    fig.add_trace(smaller)
+
+    fig.update_layout(
+        title = dict(text = "Original vs. Smaller Network Validation Loss",
+                    x = 0.5),
+        xaxis = dict(tickmode = 'linear',
+        tick0 = 0,
+        dtick = 1),
+        grid = False
+    )
+    fig.show()
 
 
 def load_data():
@@ -67,28 +89,26 @@ def load_data():
     return x_train, y_train, x_test, y_test
 
 
-def original_network():
+def train_network(x_train, y_train, x_test, y_test, settings):
     """Creates basic neural network model
     Trains model over less epochs (iterations) with a larger batch size
     Evaluates trained model using test set - 88% accuracy
     """
-    x_train, y_train, x_test, y_test = load_data()
     model = models.Sequential()
     # Input layer
-    model.add(layers.Dense(16, activation = 'relu', input_shape = (10000,)))
+    model.add(layers.Dense(settings[0], activation = 'relu', input_shape = (10000,)))
     # Hidden layer
-    model.add(layers.Dense(16, activation = 'relu'))
+    model.add(layers.Dense(settings[1], activation = 'relu'))
     # Output layer
-    model.add(layers.Dense(1, activation = 'sigmoid'))
+    model.add(layers.Dense(settings[2], activation = 'sigmoid'))
     model.compile(optimizer='rmsprop',
-                loss='mse',
+                loss='binary_crossentropy',
                 metrics=['acc'])
                 
-    history = model.fit(x_train, y_train, epochs=20, batch_size = 512)
+    history = model.fit(x_train, y_train, epochs=20, batch_size = 512, validation_data=(x_test, y_test))
     history_dict = history.history
     results = model.evaluate(x_test, y_test)
-    print(history_dict['loss'])
-    return history_dict['loss']
+    return history_dict['val_loss']
 
 
 def smaller_network():
@@ -97,30 +117,45 @@ def smaller_network():
     Evaluates trained model using test set - 88% accuracy
     """
     x_train, y_train, x_test, y_test = load_data()
-    model = models.Sequential()
+    print(len(x_train))
+    print(len(y_train))
+    print(len(x_test))
+    print(len(x_test))
+    smodel = models.Sequential()
     # Hidden layer
-    model.add(layers.Dense(4, activation = 'relu', input_shape = (10000,)))
+    smodel.add(layers.Dense(4, activation = 'relu', input_shape = (10000,)))
     # Hidden layer
-    model.add(layers.Dense(4, activation = 'relu'))
+    smodel.add(layers.Dense(4, activation = 'relu'))
     # Output layer
-    model.add(layers.Dense(1, activation = 'sigmoid'))
-    model.compile(optimizer='rmsprop',
+    smodel.add(layers.Dense(1, activation = 'sigmoid'))
+    smodel.compile(optimizer='rmsprop',
                 loss='categorical_crossentropy',
                 metrics=['acc'])
                 
-    history = model.fit(x_train, y_train, epochs=20, batch_size = 512)
+    history = smodel.fit(x_train, y_train, epochs=20, batch_size = 512,
+                        validation_data=(x_test, y_test))
     history_dict = history.history
-    results = model.evaluate(x_test, y_test)
-    print(history_dict['loss'])
-    return history_dict['loss']
+    results = smodel.evaluate(x_test, y_test)
+    print(history_dict.keys())
+    return history_dict['val_loss']
 
 
 def main():
-    o_loss = original_network()
-    s_loss = smaller_network()
-    print(o_loss)
-    print(s_loss)
-    plot_loss(o_loss, s_loss, "Original vs. Smaller Network")
+    if not exists("06_val_stats.csv"):
+        x_train, y_train, x_test, y_test = load_data()
+        loss_stats = []
+        settings = [[16,16,1], [4,4,1]]
+        for setting in settings:
+            loss_stats.append(train_network(x_train, y_train, x_test, y_test, setting))
+
+        df = pd.DataFrame({'original': loss_stats[0], 'smaller' : loss_stats[1]})
+        print(df)
+        df.to_csv("06_val_stats.csv", index = False)
+    else:
+        df = pd.read_csv("06_val_stats.csv")
+
+    print(type(df))
+    plot_loss(df['original'].tolist(), df['smaller'].tolist(), "Original vs. Smaller Network")
 
 
 
