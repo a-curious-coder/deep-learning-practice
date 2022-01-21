@@ -175,10 +175,12 @@ def train_network_regularizer(x_train, y_train, x_test, y_test, settings):
     model = models.Sequential()
     # Input layer
     model.add(layers.Dense(settings[0], kernel_regularizer = regularizers.l2(0.001), activation = 'relu', input_shape = (10000,)))
-    model.add(layers.Dense(0.5))
+    # Dropout layer
+    model.add(layers.Dropout(0.5))
     # Hidden layer
     model.add(layers.Dense(settings[1], kernel_regularizer = regularizers.l2(0.001), activation = 'relu'))
-    model.add(layers.Dense(0.5))
+    # Dropout layer
+    model.add(layers.Dropout(0.5))
     # Output layer
     model.add(layers.Dense(settings[2], activation = 'sigmoid'))
 
@@ -197,11 +199,11 @@ def main():
     for mode in modes:
         loss_stats = []
         x_train, y_train, x_test, y_test = load_data()
-        if not exists(f"06v_{mode}.csv") and mode == "regularization":
+        if not exists(f"06vd_{mode}.csv") and mode == "regularization":
             loss_stats.append(train_network(x_train, y_train, x_test, y_test, [16,16,1]))
             loss_stats.append(train_network_regularizer(x_train, y_train, x_test, y_test, [16,16,1]))
             df = pd.DataFrame({'original': loss_stats[0], mode : loss_stats[1]})
-            df.to_csv(f"06v_{mode}.csv", index = False)
+            df.to_csv(f"06vd_{mode}.csv", index = False)
         
         if not exists(f"06v_{mode}.csv") and mode != "regularization":
             if mode == "bigger":
