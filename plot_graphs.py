@@ -9,6 +9,7 @@ def plot_loss(loss, val_loss):
     epochs_range = list(range(1, len(loss)+1))
     loss = [i*100 for i in loss]
     val_loss = [i*100 for i in val_loss]
+    
     training_loss = go.Scatter(
         x = epochs_range,
         y = loss,
@@ -17,6 +18,7 @@ def plot_loss(loss, val_loss):
         marker = dict(color = 'red'),
         hovertemplate="Epoch %{x}<br>Training Loss: %{y:.2f}%<extra></extra>"
     )
+
     validation_loss = go.Scatter(
         x = epochs_range,
         y = val_loss,

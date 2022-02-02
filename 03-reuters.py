@@ -95,7 +95,7 @@ def main():
     plot_loss(history.history['loss'], history.history['val_loss'])
 
     predictions = model.predict(x_test)
-    # print(np.argmax(predictions[0]))
+    print(np.argmax(predictions[0]))
     
 
 

@@ -83,11 +83,15 @@ def trial_1():
     y_val = y_train[:10000]
     partial_y_train = y_train[10000:]
     
+    print(x_val.shape)
+    print(partial_x_train.shape)
+    print(y_val.shape)
+    print(partial_y_train.shape)
     # Compile the neural network / model
     network.compile(optimizer='rmsprop',
                 loss='binary_crossentropy',
                 metrics=['acc'])
-
+    
     history = network.fit(partial_x_train,
                         partial_y_train,
                         epochs=20,
@@ -118,6 +122,7 @@ def trial_2():
                 
     history = model.fit(x_train, y_train, epochs=4, batch_size = 512)
     results = model.evaluate(x_test, y_test)
+    model.summary()
     print(history.history.keys())
     # loss_values = history.history['loss']
     # val_loss_values = history.history['loss']
@@ -125,8 +130,8 @@ def trial_2():
 
 
 def main():
-    # trial_1()
-    trial_2()
+    trial_1()
+    # trial_2()
 
 
 if __name__ == "__main__":

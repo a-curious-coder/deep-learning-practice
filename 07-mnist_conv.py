@@ -1,4 +1,8 @@
+import os
 import tensorflow as tf
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
 from tensorflow.keras import layers
 from tensorflow.keras import models
 from tensorflow.keras.utils import to_categorical
@@ -26,7 +30,6 @@ def create_model():
 
 
 def main():
-    
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
     x_train = x_train.reshape((60000, 28, 28, 1))
@@ -37,17 +40,18 @@ def main():
 
     y_train = to_categorical(y_train)
     y_test = to_categorical(y_test)
+    # If no CNN has been created
     if not exists("models/07-mnist-model.tf"):
+        # Create model
         print("Creating Model")
         model = create_model()
         model.fit(x_train, y_train, epochs=5, batch_size=64)
         model.save("models/07-mnist-model.tf")
+    
     print("Loading Model")
     model = models.load_model("models/07-mnist-model.tf")
-    test_loss, test_acc = model.evaluate(x_test, y_test)
+    test_loss, test_acc = model.evaluate(x_test, y_test, verbose=0)
     print(f"Accuracy: {test_acc*100:.2f}%")
-    print(model.summary())
-    pass
 
 
 if __name__ == "__main__":

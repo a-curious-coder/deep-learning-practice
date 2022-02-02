@@ -4,6 +4,7 @@ import plotly.graph_objs as go
 import plotly
 import matplotlib.pyplot as plt
 from os.path import exists
+import tensorflow as tf
 from tensorflow.keras.datasets import imdb
 from tensorflow.keras import optimizers
 from tensorflow.keras import losses
@@ -191,6 +192,7 @@ def train_network_regularizer(x_train, y_train, x_test, y_test, settings):
     history = model.fit(x_train, y_train, epochs=20, batch_size = 512, validation_data=(x_test, y_test))
     history_dict = history.history
     results = model.evaluate(x_test, y_test)
+    tf.keras.utils.plot_model(model, show_shapes = True, rankdir='LR')
     return history_dict['val_loss']
 
 
@@ -220,6 +222,7 @@ def main():
             df = pd.read_csv(f"06v_{mode}.csv")
         print(df.head())
         plot_loss(mode, df['original'].tolist(), df[mode].tolist())
+
 
 if __name__ == "__main__":
     main()

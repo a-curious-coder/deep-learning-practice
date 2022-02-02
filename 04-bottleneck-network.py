@@ -43,6 +43,7 @@ def main():
     # one_hot_test_labels = to_one_hot(test_labels)
 
     x_train = vectorize_sequences(train_data)
+    print(x_train)
     x_test = vectorize_sequences(test_data)
 
     y_train = np.array(train_labels)
@@ -85,11 +86,10 @@ def main():
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']
 
-    # pg.plot_accuracy(history.history['accuracy'], history.history['val_accuracy'])
+    pg.plot_accuracy(history.history['accuracy'], history.history['val_accuracy'])
     # pg.plot_loss(history.history['loss'], history.history['val_loss'])
     # pg.plot_all_graphs(loss, val_loss, acc, val_acc)
-
-    predictions = model.predict(x_test)
+    predictions = model.evaluate(x_test, y_test)
 
 
 

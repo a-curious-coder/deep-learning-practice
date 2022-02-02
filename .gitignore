@@ -181,3 +181,5 @@ cython_debug/
 
 # CUSTOM
 /models
+/data
+/cat_dog_data
